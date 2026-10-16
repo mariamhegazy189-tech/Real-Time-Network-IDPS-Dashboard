@@ -1,6 +1,6 @@
-# 🛡️ Real-Time Network Intrusion Detection System Dashboard
+# 🛡️ Real-Time Network IDPS Dashboard
 
-A real-time Network Intrusion Detection System (NIDS) built using **Snort 3, Scapy, SQLite, and Streamlit**.
+A real-time Network Intrusion Detection and Prevention System (IDPS) dashboard built using **Snort 3, Scapy, SQLite, and Streamlit**. It monitors network traffic, visualizes detected alerts, and supports custom rule evaluation. Actual traffic prevention depends on the Snort deployment mode and must be validated through packet-level testing.
 
 The system captures live network traffic, detects suspicious activity using Snort signature-based detection, stores packet and alert data in SQLite, and visualizes network activity through an interactive Streamlit dashboard.
 
@@ -628,6 +628,14 @@ Packets are not equal to alerts. Most packets are TCP handshakes, ACKs, response
 These alerts came mainly from web scanning, directory traversal attempts, User-Agent variation, DVWA-style attacks, and suspicious web payloads.
 
 ---
+
+## Custom Snort Rule
+
+The project includes a custom Snort rule with SID `1000002`, named `IPS - ICMP Blocked`, in `local.rules`.
+
+The rule is configured to drop matching IPv4 ICMP packets when Snort runs in a compatible inline/drop-capable mode. An alert or a `would_drop` action alone does not prove that traffic was blocked. Validate prevention with packet-level tests in an isolated lab.
+
+Blocking all IPv4 ICMP traffic can disrupt legitimate network diagnostics and connectivity.
 
 ## Enriched Alert JSON Export
 
