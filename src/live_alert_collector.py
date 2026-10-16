@@ -1,10 +1,12 @@
 import json
+import ipaddress
+import os
 import sqlite3
 import time
 from datetime import datetime
 from pathlib import Path
 
-DB_FILE = "ids_live.db"
+DB_FILE = Path(__file__).resolve().parent.parent / "ids_live.db"
 ALERT_FILE = Path.home() / "snort_logs" / "alert_json.txt"
 MAX_ALERTS = 10000
 
@@ -92,6 +94,91 @@ def setup_database():
 
     conn.commit()
     conn.close()
+
+
+def maybe_auto_block(alert):
+    """Guarded auto-block: dry-run by default, never enabled implicitly."""
+    if os.getenv("IDS_AUTO_BLOCK", "0") != "1":
+        return
+
+    if to_int(alert.get("priority")) != 1:
+        return
+
+    source = alert.get("src_addr")
+    try:
+        ip = ipaddress.ip_address(str(source).strip())
+    except ValueError:
+        print("[AUTO-BLOCK] Skipped invalid source IP.")
+        return
+
+    if ip.version != 4 or not ip.is_global:
+        print(f"[AUTO-BLOCK] Skipped non-public IPv4 source: {ip}")
+        return
+
+    destination = alert.get("dst_addr")
+    try:
+        if destination and ip == ipaddress.ip_address(str(destination).strip()):
+            print("[AUTO-BLOCK] Skipped: source equals destination.")
+            return
+    except ValueError:
+        pass
+
+    # Comma-separated trusted addresses, e.g. "8.8.8.8,1.1.1.1".
+    allowlist = set()
+    for item in os.getenv("IDS_AUTO_BLOCK_ALLOWLIST", "").split(","):
+        item = item.strip()
+        if not item:
+            continue
+        try:
+            trusted_ip = ipaddress.ip_address(item)
+            if trusted_ip.version == 4:
+                allowlist.add(str(trusted_ip))
+        except ValueError:
+            print(f"[AUTO-BLOCK] Ignoring invalid allowlist entry: {item}")
+
+    if str(ip) in allowlist:
+        print(f"[AUTO-BLOCK] Skipped trusted source: {ip}")
+        return
+
+    # Avoid blocking public IPv4 addresses assigned directly to this host.
+    import re
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["ip", "-o", "-4", "addr", "show"],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=True,
+        )
+        local_ips = set(re.findall(
+            r"\\binet\\s+(\\d{1,3}(?:\\.\\d{1,3}){3})/",
+            result.stdout,
+        ))
+        if str(ip) in local_ips:
+            print(f"[AUTO-BLOCK] Skipped local host address: {ip}")
+            return
+    except Exception as exc:
+        # Fail closed: do not auto-block if host-address checks fail.
+        print(f"[AUTO-BLOCK] Skipped; unable to verify local addresses: {exc}")
+        return
+
+    # Dry-run is the default. Real blocking requires BOTH settings.
+    if os.getenv("IDS_AUTO_BLOCK_MODE", "dry-run").lower() != "apply":
+        print(f"[AUTO-BLOCK] DRY RUN: eligible source {ip}; firewall unchanged.")
+        return
+
+    try:
+        import ips_controller
+        status = ips_controller.block_ip(str(ip))
+        if not status.get("ready"):
+            print(f"[AUTO-BLOCK] Failed: firewall is not ready for {ip}")
+            return
+        print(f"[AUTO-BLOCK] Applied firewall block for {ip}.")
+    except Exception as exc:
+        print(f"[AUTO-BLOCK] Failed for {ip}: {exc}")
+
 
 def save_alert(alert):
     raw_json = json.dumps(alert, sort_keys=True)
@@ -208,14 +295,17 @@ def save_alert(alert):
 
     conn.commit()
     conn.close()
+    maybe_auto_block(alert)
 
 
 def follow_alert_file():
     print(f"Watching Snort JSON alert file: {ALERT_FILE}")
     print(f"Writing latest {MAX_ALERTS} alerts to: {DB_FILE}")
 
-    ALERT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    ALERT_FILE.touch(exist_ok=True)
+    if not ALERT_FILE.exists():
+        raise FileNotFoundError(
+            f"Snort alert file does not exist: {ALERT_FILE}"
+        )
 
     with open(ALERT_FILE, "r") as f:
         # Start from beginning so already captured JSON alerts also get inserted.

@@ -3,9 +3,10 @@ import sqlite3
 from pathlib import Path
 
 
-DB_FILE = Path("ids_live.db")
-RULE_DOC_JSON_FILE = Path("rule_docs_preprocessed_by_sid.json")
-OUTPUT_FILE = Path("enriched_snort_alerts_with_rule_docs.json")
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+DB_FILE = PROJECT_DIR / "ids_live.db"
+RULE_DOC_JSON_FILE = PROJECT_DIR / "data" / "json" / "rule_docs_preprocessed_by_sid.json"
+OUTPUT_FILE = PROJECT_DIR / "data" / "json" / "enriched_snort_alerts_with_rule_docs.json"
 
 
 def normalize_rule_key(value):

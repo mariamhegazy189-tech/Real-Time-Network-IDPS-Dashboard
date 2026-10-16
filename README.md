@@ -206,7 +206,7 @@ Previously captured data can still be viewed from SQLite even if live attacks ar
 ## Repository Structure
 
 ```text
-Real-Time-Network-IDS-Dashboard/
+Real-Time-Network-IDPS-Dashboard/
 
 ├── README.md
 ├── requirements.txt
@@ -437,8 +437,8 @@ The `scripts/` folder contains helper scripts used for dataset collection, clean
 ### Clone Repository
 
 ```bash
-git clone https://github.com/MaheenN31/Real-Time-Network-IDS-Dashboard.git
-cd Real-Time-Network-IDS-Dashboard
+git clone https://github.com/MaheenN31/Real-Time-Network-IDPS-Dashboard.git
+cd Real-Time-Network-IDPS-Dashboard
 ```
 
 ### Install Python Dependencies

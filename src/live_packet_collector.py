@@ -1,9 +1,11 @@
 from scapy.all import sniff, IP, TCP, UDP, ICMP, ARP, Raw, DNS, DNSQR
+import os
 import sqlite3
+from pathlib import Path
 from datetime import datetime
 
-DB_FILE = "ids_live.db"
-INTERFACE = "enp0s8"
+DB_FILE = Path(__file__).resolve().parent.parent / "ids_live.db"
+INTERFACE = os.environ.get("IDS_INTERFACE", "eth0")
 
 
 def setup_database():

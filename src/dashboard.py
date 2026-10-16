@@ -12,10 +12,11 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-DB_FILE = Path("ids_live.db")
-RULE_DOC_JSON_FILE = Path("data/json/rule_docs_preprocessed_by_sid.json")
-SNORT_ALERT_LOG_FILE = Path("/home/maheen/snort_logs/alert_json.txt")
-ENRICHED_ALERT_JSON_FILE = Path("data/json/enriched_snort_alerts_with_rule_docs.json")
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+DB_FILE = PROJECT_DIR / "ids_live.db"
+RULE_DOC_JSON_FILE = PROJECT_DIR / "data/json/rule_docs_preprocessed_by_sid.json"
+SNORT_ALERT_LOG_FILE = Path.home() / "snort_logs" / "alert_json.txt"
+ENRICHED_ALERT_JSON_FILE = PROJECT_DIR / "data/json/enriched_snort_alerts_with_rule_docs.json"
 
 # PCAP replay test statistics from the controlled Kali tcpreplay run
 PCAP_TOTAL_PACKETS = 135292
@@ -905,7 +906,7 @@ def signature_plain_english(row):
 st.markdown(
     f"""
     <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-        <h1 style="margin-bottom: 0;">Network Intrusion Detection Dashboard</h1>
+        <h1 style="margin-bottom: 0;">Network Intrusion Prevention and Detection System</h1>
         <span class="version-pill">{DASHBOARD_VERSION}</span>
     </div>
     """,
@@ -917,7 +918,7 @@ st.caption("Live packet monitoring and Snort alert visualization")
 st.sidebar.markdown(
     f"""
     <div class="sidebar-card">
-        <div class="sidebar-title">NIDS Dashboard</div>
+        <div class="sidebar-title">IDPS Dashboard</div>
         <div class="sidebar-subtitle">
             Real-time Snort alerting, packet visibility, and rule explanation.
         </div>
@@ -937,12 +938,18 @@ except Exception:
 if isinstance(page_key, list):
     page_key = page_key[0]
 
-if page_key not in ["alerts", "traffic"]:
+if page_key not in ["alerts", "traffic", "ips"]:
     page_key = "alerts"
 
-page = "Alert Dashboard" if page_key == "alerts" else "Network Traffic Dashboard"
+page_names = {
+    "alerts": "Alert Dashboard",
+    "traffic": "Network Traffic Dashboard",
+    "ips": "IPS Control",
+}
+page = page_names[page_key]
 alert_active = "active" if page_key == "alerts" else ""
 traffic_active = "active" if page_key == "traffic" else ""
+ips_active = "active" if page_key == "ips" else ""
 
 st.sidebar.markdown(
     f"""
@@ -955,6 +962,10 @@ st.sidebar.markdown(
         <a class="sidebar-nav-item {traffic_active}" href="?page=traffic" target="_self">
             <span class="sidebar-nav-icon">▤</span>
             <span>Network Traffic Dashboard</span>
+        </a>
+        <a class="sidebar-nav-item {ips_active}" href="?page=ips" target="_self">
+            <span class="sidebar-nav-icon">🛡</span>
+            <span>IPS Control</span>
         </a>
     </div>
     <div class="sidebar-note">
@@ -1747,3 +1758,75 @@ elif page == "Network Traffic Dashboard":
         st.dataframe(recent_packets, use_container_width=True, height=300)
     else:
         st.info("No recent packet records yet.")
+
+elif page == "IPS Control":
+    import sys
+    from pathlib import Path
+
+    SRC_DIR = str(Path(__file__).resolve().parent)
+    if SRC_DIR not in sys.path:
+        sys.path.insert(0, SRC_DIR)
+
+    import ips_controller
+
+    st.title("🛡️ IPS Control")
+    st.caption(
+        "Manage inbound IPv4 blocking on this Kali host. "
+        "This does not block traffic forwarded through another device."
+    )
+
+    try:
+        status = ips_controller.get_status()
+        if status["ready"]:
+            st.success(status["message"])
+        else:
+            st.warning(status["message"])
+    except Exception as exc:
+        status = {"ready": False, "blocked_ips": []}
+        st.error(f"Could not read firewall status: {exc}")
+
+    st.subheader("Block an IPv4 address")
+    with st.form("ips_block_form"):
+        block_address = st.text_input(
+            "IPv4 address",
+            placeholder="Example: 192.168.18.50",
+        )
+        block_submit = st.form_submit_button(
+            "Block IP",
+            disabled=not status["ready"],
+        )
+
+    if block_submit:
+        try:
+            ips_controller.block_ip(block_address)
+            st.success("Block-list updated.")
+            st.rerun()
+        except Exception as exc:
+            st.error(f"Block failed: {exc}")
+
+    st.divider()
+    st.subheader("Unblock an IPv4 address")
+    blocked_ips = status.get("blocked_ips", [])
+
+    if blocked_ips:
+        with st.form("ips_unblock_form"):
+            selected_ip = st.selectbox(
+                "Select blocked IP",
+                options=blocked_ips,
+            )
+            unblock_submit = st.form_submit_button("Unblock IP")
+
+        if unblock_submit:
+            try:
+                ips_controller.unblock_ip(selected_ip)
+                st.success("IP removed from the block list.")
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Unblock failed: {exc}")
+    else:
+        st.info("No IP addresses are currently blocked.")
+
+    st.caption(
+        "Safety: blocking applies to traffic destined for this Kali host, "
+        "not traffic forwarded to another machine."
+    )

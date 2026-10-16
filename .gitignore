@@ -28,4 +28,14 @@ captures/*
 
 # OS files
 .DS_Store
-Thumbs.db
+Thumbs.db*.bak
+*.bak.*
+ids_live.db.backup-*
+ids_live.db
+
+# Local backups and runtime data
+*.bak
+*.bak.*
+*.db
+*.db-*
+ids_live.db.backup-*
