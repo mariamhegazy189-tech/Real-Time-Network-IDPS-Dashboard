@@ -247,8 +247,8 @@ Real-Time-Network-IDPS-Dashboard/
 │   └── export_enriched_alerts_json.py
 │
 ├── docs/
-│   ├── Real-Time_NIDS_Project_Documentation_v4.pdf
-│   └── Real-Time_NIDS_Project_Documentation_v4.docx
+│   ├── Real-Time_NIDS_Project_Documentation_v3.pdf
+│   └── Real-Time_NIDS_Project_Documentation_v4.pdf
 │
 └── screenshots/
     ├── dashboard_network_traffic_v4.png
