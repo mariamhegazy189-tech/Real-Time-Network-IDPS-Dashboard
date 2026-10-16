@@ -107398,5 +107398,13 @@
     "contributors": "Cisco Talos Intelligence Group",
     "cve_text": "None\n\nAdditional Links\n\nblog.talosintelligence.com/openssl-vulnerability/",
     "rule_text": "alert ssl ( msg:\"SERVER-OTHER OpenSSL x509 crafted email address buffer overflow attempt\"; flow:established; content:\"|06 03 55 1D 1E|\"; ber_skip:0x01,optional; ber_data:0x04; ber_data:0x30; ber_data:0xa0; ber_data:0x30; content:\"|81 82|\",within 2; byte_test:2,>,500,0,relative; content:\"xn--\",within 4,distance 2,fast_pattern; metadata:policy balanced-ips drop,policy connectivity-ips drop,policy max-detect-ips drop,policy security-ips drop,ruleset community; reference:cve,2022-3602; reference:cve,2022-3786; reference:url,blog.talosintelligence.com/openssl-vulnerability/; classtype:attempted-user; gid:1; sid:300307; rev:3; )"
+  },
+  "1000002": {
+    "sid": 1000002,
+    "rule_name": "IPS - ICMP Blocked",
+    "rule_explanation": "Custom Snort rule configured to drop IPv4 ICMP packets matching the rule.",
+    "severity": "Unclassified",
+    "what_to_look_for": "Review source and destination addresses and confirm whether the ICMP traffic is expected before treating it as malicious.",
+    "recommended_action": "Validate the rule against the network policy. Blocking all IPv4 ICMP can disrupt legitimate diagnostics and network functions."
   }
 }
