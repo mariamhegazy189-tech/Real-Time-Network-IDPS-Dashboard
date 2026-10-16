@@ -437,7 +437,7 @@ The `scripts/` folder contains helper scripts used for dataset collection, clean
 ### Clone Repository
 
 ```bash
-git clone https://github.com/MaheenN31/Real-Time-Network-IDPS-Dashboard.git
+git clone https://github.com/mariamhegazy189-tech/Real-Time-Network-IDPS-Dashboard.git
 cd Real-Time-Network-IDPS-Dashboard
 ```
 
@@ -495,21 +495,21 @@ sudo snort -q \
 ### 2. Start the Packet Collector
 
 ```bash
-cd /home/maheen/ids_streamlit_dashboard
+cd ~/Real-Time-Network-IDPS-Dashboard
 sudo python3 live_packet_collector.py
 ```
 
 ### 3. Start the Alert Collector
 
 ```bash
-cd /home/maheen/ids_streamlit_dashboard
+cd ~/Real-Time-Network-IDPS-Dashboard
 python3 live_alert_collector.py
 ```
 
 ### 4. Start the Dashboard
 
 ```bash
-cd /home/maheen/ids_streamlit_dashboard
+cd ~/Real-Time-Network-IDPS-Dashboard
 streamlit run dashboard.py --server.address 0.0.0.0 --server.port 8501 --server.headless true
 ```
 
@@ -656,7 +656,7 @@ data/json/enriched_snort_alerts_with_rule_docs.json
 Run:
 
 ```bash
-cd /home/maheen/ids_streamlit_dashboard
+cd ~/Real-Time-Network-IDPS-Dashboard
 python3 scripts/export_enriched_alerts_json.py
 ```
 
@@ -814,7 +814,7 @@ Check:
 Run:
 
 ```bash
-cd /home/maheen/ids_streamlit_dashboard
+cd ~/Real-Time-Network-IDPS-Dashboard
 python3 scripts/export_enriched_alerts_json.py
 ```
 
