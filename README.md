@@ -919,3 +919,24 @@ This project is released under the MIT License.
 **Maheen Nadeem**  
 BS Computer Science  
 Real-Time Network Intrusion Detection System Internship Project
+
+---
+
+## 🚀 Recent Architecture & System Enhancements (v4.0 Finalization)
+
+### 1. Enhanced Snort 3 Rule Enrichment & Documentation
+- **JSON Rule Mapping**: Resolved JSON mapping structures to correctly enrich Snort 3 alerts with complete metadata (e.g., rule documentation for SID `1000002` and custom rule definitions).
+- **Automated Rule Context**: Integrated dynamic lookup for alert messages, security categories, and mitigation advice across the dashboard.
+
+### 2. Robust Real-Time Alert Ingestion Pipeline
+- **Operational Collector**: Fully validated `src/live_alert_collector.py`, actively capturing real-time Snort 3 logs and populating the local SQLite database (`ids_live.db`).
+- **Database Scalability**: Successfully ingested and managed 1,680+ live network alerts, including active ICMP block logs, ensuring high-throughput query performance for the dashboard.
+
+### 3. Kernel-Level IPS Enforcement via nftables
+- **Unified nftables Structure**: Cleaned and refactored the kernel firewall setup (`table inet ids_dashboard`), establishing a single-hook `input_guard` chain (`priority filter; policy accept`).
+- **Programmatic Control**: Powered by `src/ips_controller.py` with `sudo -n` passwordless execution for seamless programmatic IP blocking (`blocked_ipv4` set) and unblocking.
+- **Accurate Packet Drop Counters**: Verified single-rule enforcement (`ip saddr @blocked_ipv4 counter drop`) to eliminate redundant rule duplication and provide reliable kernel-level packet drop tracking.
+
+### 4. Real-Time IDPS Dashboard Integration
+- **Live State Synchronization**: Directly coupled `src/dashboard.py` with `src/ips_controller.py` and `ids_live.db` for instant alert visualization, manual IP mitigation, and dynamic IPS status checking (`ready = True`).
+- **Production Readiness**: Rigorously verified and synchronized with the remote GitHub repository (`mariamhegazy189-tech/Real-Time-Network-IDPS-Dashboard`) via SSH authentication.
