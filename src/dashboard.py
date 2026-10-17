@@ -15,7 +15,7 @@ import streamlit as st
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 DB_FILE = PROJECT_DIR / "ids_live.db"
 RULE_DOC_JSON_FILE = PROJECT_DIR / "data/json/rule_docs_preprocessed_by_sid.json"
-SNORT_ALERT_LOG_FILE = Path.home() / "snort_logs" / "alert_json.txt"
+SNORT_ALERT_LOG_FILE = PROJECT_DIR / "alert_json.txt"
 ENRICHED_ALERT_JSON_FILE = PROJECT_DIR / "data/json/enriched_snort_alerts_with_rule_docs.json"
 
 # PCAP replay test statistics from the controlled Kali tcpreplay run
@@ -347,7 +347,8 @@ def load_enriched_alerts_json():
 
 def find_enriched_alert_by_id(alert_id):
     """
-    Find the selected alert record inside enriched_snort_alerts_with_rule_docs.json.
+    Find the selected alert record inside enriched_snort_alerts_with_rule_docs.json,
+    falling back directly to ids_live.db if not found (Real-time dynamic fetch).
     """
     enriched_data = load_enriched_alerts_json()
     alerts_list = enriched_data.get("alerts", [])
@@ -357,12 +358,49 @@ def find_enriched_alert_by_id(alert_id):
     except Exception:
         return None
 
+    # البحث أولاً في الـ JSON الموجود
     for item in alerts_list:
         try:
             if int(item.get("alert_id")) == selected_id:
                 return item
         except Exception:
             continue
+
+    # الحل الجذري: لو مش موجود في الـ JSON، نجيبه مباشرة من قاعدة البيانات الحية طيران!
+    db_path = PROJECT_DIR / "ids_live.db"
+    if db_path.exists():
+        try:
+            with sqlite3.connect(f"file:{db_path.resolve()}?mode=ro", uri=True) as conn:
+                conn.row_factory = sqlite3.Row
+                row = conn.execute("SELECT * FROM alerts WHERE id = ?", (selected_id,)).fetchone()
+                if row:
+                    r = dict(row)
+                    sid = r.get("sid")
+                    return {
+                        "alert_id": r.get("id"),
+                        "alert": {
+                            "timestamp": r.get("timestamp"),
+                            "alert_message": r.get("msg"),
+                            "rule_id": f'1:{sid}:1' if sid is not None else "N/A",
+                            "gid": r.get("gid", 1),
+                            "sid": sid,
+                            "rev": r.get("rev", 1),
+                            "classification": r.get("classification"),
+                            "priority": r.get("priority"),
+                            "protocol": r.get("protocol"),
+                            "src_addr": r.get("src_addr"),
+                            "src_port": r.get("src_port"),
+                            "dst_addr": r.get("dst_addr"),
+                            "dst_port": r.get("dst_port"),
+                            "action": r.get("action"),
+                            "packet_length": r.get("pkt_len"),
+                            "raw_json": r.get("raw_json"),
+                        },
+                        "rule_documentation_found": False,
+                        "rule_documentation": None
+                    }
+        except Exception:
+            pass
 
     return None
 

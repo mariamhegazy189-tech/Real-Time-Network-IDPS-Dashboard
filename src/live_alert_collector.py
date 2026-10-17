@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 DB_FILE = Path(__file__).resolve().parent.parent / "ids_live.db"
-ALERT_FILE = Path.home() / "snort_logs" / "alert_json.txt"
+ALERT_FILE = Path(__file__).resolve().parent.parent / "alert_json.txt"
 MAX_ALERTS = 10000
 
 
@@ -308,8 +308,8 @@ def follow_alert_file():
         )
 
     with open(ALERT_FILE, "r") as f:
-        # Start from beginning so already captured JSON alerts also get inserted.
-        f.seek(0)
+        # Start at the current end to avoid re-importing historical alerts.
+        f.seek(0, os.SEEK_END)
 
         while True:
             line = f.readline()

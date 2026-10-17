@@ -107402,7 +107402,7 @@
   "1000002": {
     "sid": 1000002,
     "rule_name": "IPS - ICMP Blocked",
-    "rule_explanation": "Custom Snort rule configured to drop IPv4 ICMP packets matching the rule.",
+    "rule_explanation": "Custom Snort rule configured to inspect and block ICMP packets (IPv4 & IPv6 Neighbor/Echo traffic) in real-time IDPS mode.",
     "severity": "Unclassified",
     "what_to_look_for": "Review source and destination addresses and confirm whether the ICMP traffic is expected before treating it as malicious.",
     "recommended_action": "Validate the rule against the network policy. Blocking all IPv4 ICMP can disrupt legitimate diagnostics and network functions."
