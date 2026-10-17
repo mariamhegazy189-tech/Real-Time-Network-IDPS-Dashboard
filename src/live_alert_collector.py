@@ -303,9 +303,9 @@ def follow_alert_file():
     print(f"Writing latest {MAX_ALERTS} alerts to: {DB_FILE}")
 
     if not ALERT_FILE.exists():
-        raise FileNotFoundError(
-            f"Snort alert file does not exist: {ALERT_FILE}"
-        )
+        print(f"[!] Alert file not found at {ALERT_FILE}. Creating an empty one automatically...")
+        ALERT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        ALERT_FILE.touch()
 
     with open(ALERT_FILE, "r") as f:
         # Start at the current end to avoid re-importing historical alerts.
